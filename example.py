@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-pip3 install cloudscraper requests readchar pwinput
+pip3 install requests pwinput
 
 export EMAIL=<your garmin email>
 export PASSWORD=<your garmin password>
@@ -14,7 +14,6 @@ import sys
 
 import requests
 import pwinput
-import readchar
 
 from garminconnect import (
     Garmin,
@@ -50,7 +49,7 @@ menu_options = {
     "5": f"Get body composition data for '{today.isoformat()}' (compatible with garminconnect-ha)",
     "6": f"Get body composition data for from '{startdate.isoformat()}' to '{today.isoformat()}' (to be compatible with garminconnect-ha)",
     "7": f"Get stats and body composition data for '{today.isoformat()}'",
-    "8": f"Get steps data for '{today.isoformat()}'",
+    "8": f"Get steps data for '{today.isoformat()}' or step report for '{startdate.isoformat()}' to '{today.isoformat()}'",
     "9": f"Get heart rate data for '{today.isoformat()}'",
     "0": f"Get training readiness data for '{today.isoformat()}'",
     ".": f"Get training status data for '{today.isoformat()}'",
@@ -150,7 +149,6 @@ def print_menu():
     """Print examples menu."""
     for key in menu_options.keys():
         print(f"{key} -- {menu_options[key]}")
-    print("Make your selection: ", end="", flush=True)
 
 
 def switch(api, i):
@@ -164,7 +162,7 @@ def switch(api, i):
     # Skip requests if login failed
     if api:
         try:
-            print(f"\n\nExecuting: {menu_options[i]}\n")
+            print(f"\nExecuting: {menu_options[i]}\n")
 
             # USER BASICS
             if i == "1":
@@ -195,8 +193,17 @@ def switch(api, i):
 
             # USER STATISTICS LOGGED
             elif i == "8":
+                # Prompt for specificity (detail, daily, or weekly)
+                grain = input("Select specificity of step data to retrieve [detail/[d]aily/[w]eekly]: ")
+                if grain == "d":
+                    grain = "daily"
+                elif grain == "w":
+                    grain = "weekly"
+                if grain in ["daily", "weekly"]:
+                    display_json(f"api.get_steps_report('{startdate.isoformat()}', '{today.isoformat()}', '{grain}')", api.get_steps_report(startdate.isoformat(), today.isoformat(), grain))
                 # Get steps data for 'YYYY-MM-DD'
-                display_json(f"api.get_steps_data('{today.isoformat()}')", api.get_steps_data(today.isoformat()))
+                else:
+                    display_json(f"api.get_steps_data('{today.isoformat()}')", api.get_steps_data(today.isoformat()))
             elif i == "9":
                 # Get heart rate data for 'YYYY-MM-DD'
                 display_json(f"api.get_heart_rates('{today.isoformat()}')", api.get_heart_rates(today.isoformat()))
@@ -392,5 +399,5 @@ while True:
 
     # Display menu
     print_menu()
-    option = readchar.readkey()
+    option = input("Make your selection: ")
     switch(api, option)

@@ -275,6 +275,7 @@ def switch(api, i):
             elif i == "8":
                 # Get steps data for 'YYYY-MM-DD'
                 display_json(f"api.get_steps_data('{today.isoformat()}')", api.get_steps_data(today.isoformat()))
+                # display_json(f"api.get_steps_report('{startdate.isoformat()}', '{today.isoformat()}')", api.get_steps_report(startdate.isoformat(), today.isoformat()))
             elif i == "9":
                 # Get heart rate data for 'YYYY-MM-DD'
                 display_json(f"api.get_heart_rates('{today.isoformat()}')", api.get_heart_rates(today.isoformat()))

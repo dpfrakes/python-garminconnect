@@ -2,12 +2,13 @@
 
 """Python 3 API wrapper for Garmin Connect to get your statistics."""
 
+import datetime
 import json
 import logging
 import re
 import requests
 from enum import Enum, auto
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import os
 
 import cloudscraper
@@ -182,6 +183,9 @@ class Garmin:
 
         self.garmin_connect_user_summary_chart = (
             "proxy/wellness-service/wellness/dailySummaryChart"
+        )
+        self.garmin_connect_step_report_url = (
+            "proxy/usersummary-service/stats/steps"
         )
         self.garmin_connect_heartrates_daily_url = (
             "proxy/wellness-service/wellness/dailyHeartRate"
@@ -438,6 +442,22 @@ class Garmin:
         logger.debug("Requesting steps data")
 
         return self.modern_rest_client.get(url, params=params).json()
+
+    def get_steps_report(self, startdate: str, enddate: str, grain: str = "daily"):
+        """
+        Fetch step data given a date range in format 'YYYY-MM-DD'
+        :param startdate: Start date
+        :type startdate: str
+        :param enddate: End date in format 'YYYY-MM-DD'
+        :type enddate: str
+        :param grain: Aggregation level of step data (valid options are "daily" or "weekly")
+        :type grain: str
+        """
+
+        url = f"{self.garmin_connect_step_report_url}/{grain}/{startdate}/{enddate}"
+        logger.debug("Requesting steps report")
+
+        return self.modern_rest_client.get(url).json()
 
     def get_heart_rates(self, cdate):
         """Fetch available heart rates data 'cDate' format 'YYYY-MM-DD'."""
