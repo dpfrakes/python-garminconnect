@@ -8,7 +8,7 @@ import logging
 import re
 import requests
 from enum import Enum, auto
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import os
 
 import cloudscraper
@@ -432,16 +432,34 @@ class Garmin:
 
         return response
 
-    def get_steps_data(self, cdate):
-        """Fetch available steps data 'cDate' format 'YYYY-MM-DD'."""
+    def get_steps_data(self, startdate: str, enddate: Optional[str] = None, grain: str = "detail"):
+        """
+        Fetch available steps data for given date(s) and specified granularity
+        :param startdate: Start date for daily/weekly step data or exact date for detailed step data (15m interval)
+        :type startdate: str
+        :param enddate: End date for daily/weekly step data
+        :type enddate: str
+        :param grain: Granularity of data to retrieve (valid options are "detail", "daily", and "weekly")
+        :type grain: str
+        """
 
-        url = f"{self.garmin_connect_user_summary_chart}/{self.display_name}"
-        params = {
-            "date": str(cdate)
-        }
-        logger.debug("Requesting steps data")
+        if grain == "detail":
+            if enddate:
+                logger.warn(f"Detailed step data only available for single day: only retrieving data for {startdate}")
 
-        return self.modern_rest_client.get(url, params=params).json()
+            url = f"{self.garmin_connect_user_summary_chart}/{self.display_name}"
+            params = {
+                "date": str(startdate)
+            }
+            logger.debug("Requesting steps data")
+            return self.modern_rest_client.get(url, params=params).json()
+
+        else:
+            if not enddate:
+                logger.warn("No end date specified: using current day")
+                enddate = datetime.date.today().isoformat()
+            return self.get_steps_report(startdate, enddate, grain)
+
 
     def get_steps_report(self, startdate: str, enddate: str, grain: str = "daily"):
         """
@@ -453,6 +471,10 @@ class Garmin:
         :param grain: Aggregation level of step data (valid options are "daily" or "weekly")
         :type grain: str
         """
+
+        if grain not in ["daily", "weekly"]:
+            logger.error("Grain must be 'daily' or 'weekly': defaulting to 'daily' for date range")
+            grain = "daily"
 
         url = f"{self.garmin_connect_step_report_url}/{grain}/{startdate}/{enddate}"
         logger.debug("Requesting steps report")
@@ -631,7 +653,7 @@ class Garmin:
 
         return self.modern_rest_client.get(url).json()
 
-    def get_device_alarms(self) -> Dict[str, Any]:
+    def get_device_alarms(self) -> List[Dict[str, Any]]:
         """Get list of active alarms from all devices."""
 
         logger.debug("Requesting device alarms")
@@ -686,7 +708,7 @@ class Garmin:
         else:
             raise GarminConnectInvalidFileFormatError(f"Could not upload {activity_path}")
 
-    def get_activities_by_date(self, startdate, enddate, activitytype=None):
+    def get_activities_by_date(self, startdate: str, enddate: str, activitytype: Optional[str] = None):
         """
         Fetch available activities between specific dates
         :param startdate: String in the format YYYY-MM-DD

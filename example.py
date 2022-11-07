@@ -34,7 +34,8 @@ api = None
 
 # Example selections and settings
 today = datetime.date.today()
-startdate = today - datetime.timedelta(days=7) # Select past week
+past_week = today - datetime.timedelta(days=7) # Select past week
+past_month = today - datetime.timedelta(days=30) # Select past month
 start = 0
 limit = 100
 start_badge = 1  # Badge related calls calls start counting at 1
@@ -47,9 +48,9 @@ menu_options = {
     "3": f"Get activity data for '{today.isoformat()}'",
     "4": f"Get activity data for '{today.isoformat()}' (compatible with garminconnect-ha)",
     "5": f"Get body composition data for '{today.isoformat()}' (compatible with garminconnect-ha)",
-    "6": f"Get body composition data for from '{startdate.isoformat()}' to '{today.isoformat()}' (to be compatible with garminconnect-ha)",
+    "6": f"Get body composition data for from '{past_week.isoformat()}' to '{today.isoformat()}' (to be compatible with garminconnect-ha)",
     "7": f"Get stats and body composition data for '{today.isoformat()}'",
-    "8": f"Get steps data for '{today.isoformat()}' or step report for '{startdate.isoformat()}' to '{today.isoformat()}'",
+    "8": f"Get steps data for '{today.isoformat()}' or step report for '{past_week.isoformat()}' to '{today.isoformat()}'",
     "9": f"Get heart rate data for '{today.isoformat()}'",
     "0": f"Get training readiness data for '{today.isoformat()}'",
     ".": f"Get training status data for '{today.isoformat()}'",
@@ -68,7 +69,7 @@ menu_options = {
     "m": f"Get non completed badge challenges data from '{start_badge}' and limit '{limit}'",
     "n": f"Get activities data from start '{start}' and limit '{limit}'",
     "o": "Get last activity",
-    "p": f"Download activities data by date from '{startdate.isoformat()}' to '{today.isoformat()}'",
+    "p": f"Download activities data by date from '{past_week.isoformat()}' to '{today.isoformat()}'",
     "r": f"Get all kinds of activities data from '{start}'",
     "s": f"Upload activity data from file '{activityfile}'",
     "t": "Get all kinds of Garmin device info",
@@ -184,8 +185,8 @@ def switch(api, i):
                 display_json(f"api.get_body_composition('{today.isoformat()}')", api.get_body_composition(today.isoformat()))
             elif i == "6":
                 # Get body composition data for multiple days 'YYYY-MM-DD' (to be compatible with garminconnect-ha)
-                display_json(f"api.get_body_composition('{startdate.isoformat()}', '{today.isoformat()}')",
-                    api.get_body_composition(startdate.isoformat(), today.isoformat())
+                display_json(f"api.get_body_composition('{past_week.isoformat()}', '{today.isoformat()}')",
+                    api.get_body_composition(past_week.isoformat(), today.isoformat())
                 )
             elif i == "7":
                 # Get stats and body composition data for 'YYYY-MM-DD'
@@ -193,17 +194,16 @@ def switch(api, i):
 
             # USER STATISTICS LOGGED
             elif i == "8":
-                # Prompt for specificity (detail, daily, or weekly)
-                grain = input("Select specificity of step data to retrieve [detail/[d]aily/[w]eekly]: ")
-                if grain == "d":
-                    grain = "daily"
-                elif grain == "w":
-                    grain = "weekly"
-                if grain in ["daily", "weekly"]:
-                    display_json(f"api.get_steps_report('{startdate.isoformat()}', '{today.isoformat()}', '{grain}')", api.get_steps_report(startdate.isoformat(), today.isoformat(), grain))
-                # Get steps data for 'YYYY-MM-DD'
-                else:
-                    display_json(f"api.get_steps_data('{today.isoformat()}')", api.get_steps_data(today.isoformat()))
+                # Retrieve step data at various grain levels (detail, daily, or weekly)
+
+                # Get detailed step data for current day
+                display_json(f"api.get_steps_data('{today.isoformat()}')", api.get_steps_data(today.isoformat()))
+
+                # Get daily step data for past week
+                display_json(f"api.get_steps_report('{past_week.isoformat()}', '{today.isoformat()}', 'daily')", api.get_steps_report(past_week.isoformat(), today.isoformat(), "daily"))
+
+                # Get weekly step data for past month
+                display_json(f"api.get_steps_report('{past_month.isoformat()}', '{today.isoformat()}', 'weekly')", api.get_steps_report(past_month.isoformat(), today.isoformat(), "weekly"))
             elif i == "9":
                 # Get heart rate data for 'YYYY-MM-DD'
                 display_json(f"api.get_heart_rates('{today.isoformat()}')", api.get_heart_rates(today.isoformat()))
@@ -272,11 +272,13 @@ def switch(api, i):
                 # Get activities data from startdate 'YYYY-MM-DD' to enddate 'YYYY-MM-DD', with (optional) activitytype
                 # Possible values are: cycling, running, swimming, multi_sport, fitness_equipment, hiking, walking, other
                 activities = api.get_activities_by_date(
-                    startdate.isoformat(), today.isoformat(), activitytype
+                    past_week.isoformat(), today.isoformat(), activitytype
                 )
 
                 # Download activities
                 for activity in activities:
+                    print(activity)
+                    print("- " * 80)
                     activity_id = activity["activityId"]
                     display_json(f"api.download_activities({activity_id})", api.download_activities(activity_id))
 
